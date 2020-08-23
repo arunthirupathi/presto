@@ -65,7 +65,6 @@ import static com.facebook.presto.orc.metadata.statistics.DoubleStatistics.DOUBL
 import static com.facebook.presto.orc.metadata.statistics.IntegerStatistics.INTEGER_VALUE_BYTES;
 import static com.facebook.presto.orc.metadata.statistics.ShortDecimalStatisticsBuilder.SHORT_DECIMAL_VALUE_BYTES;
 import static com.facebook.presto.orc.metadata.statistics.StringStatistics.STRING_VALUE_BYTES_OVERHEAD;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableMap.toImmutableMap;
 import static io.airlift.slice.SliceUtf8.lengthOfCodePoint;
@@ -177,7 +176,7 @@ public class OrcMetadataReader
 
     private static Stream toStream(OrcProto.Stream stream)
     {
-        return new Stream(stream.getColumn(), toStreamKind(stream.getKind()), toIntExact(stream.getLength()), true);
+        return new Stream(stream.getColumn(), toStreamKind(stream.getKind()), stream.getLength(), true);
     }
 
     private static List<Stream> toStream(List<OrcProto.Stream> streams)
@@ -227,14 +226,10 @@ public class OrcMetadataReader
     private static RowGroupIndex toRowGroupIndex(HiveWriterVersion hiveWriterVersion, RowIndexEntry rowIndexEntry)
     {
         List<Long> positionsList = rowIndexEntry.getPositionsList();
-        ImmutableList.Builder<Integer> positions = ImmutableList.builder();
+        ImmutableList.Builder<Long> positions = ImmutableList.builderWithExpectedSize(positionsList.size());
         for (int index = 0; index < positionsList.size(); index++) {
             long longPosition = positionsList.get(index);
-            int intPosition = (int) longPosition;
-
-            checkState(intPosition == longPosition, "Expected checkpoint position %s, to be an integer", index);
-
-            positions.add(intPosition);
+            positions.add(longPosition);
         }
         return new RowGroupIndex(positions.build(), toColumnStatistics(hiveWriterVersion, rowIndexEntry.getStatistics(), true));
     }

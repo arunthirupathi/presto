@@ -33,16 +33,15 @@ final class LazySliceInput
 {
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(LazySliceInput.class).instanceSize();
 
-    private final int globalLength;
+    private final long globalLength;
     private final Supplier<FixedLengthSliceInput> loader;
-    private int initialPosition;
+    private long initialPosition;
     private FixedLengthSliceInput delegate;
 
     public LazySliceInput(long globalLength, Supplier<FixedLengthSliceInput> loader)
     {
         checkArgument(globalLength > 0, "globalLength must be at least 1");
-        checkArgument(globalLength <= Integer.MAX_VALUE, "globalLength must be less than 2GB");
-        this.globalLength = toIntExact(globalLength);
+        this.globalLength = globalLength;
         this.loader = requireNonNull(loader, "loader is null");
     }
 
@@ -78,7 +77,7 @@ final class LazySliceInput
             if (position < 0 || position > globalLength) {
                 throw new IndexOutOfBoundsException("Invalid position " + position + " for slice with length " + globalLength);
             }
-            initialPosition = toIntExact(position);
+            initialPosition = position;
             return;
         }
         delegate.setPosition(position);
@@ -97,7 +96,7 @@ final class LazySliceInput
     public int available()
     {
         if (delegate == null) {
-            return globalLength;
+            return toIntExact(globalLength);
         }
         return delegate.available();
     }

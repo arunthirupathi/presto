@@ -155,7 +155,7 @@ public class DoubleColumnWriter
             ColumnStatistics columnStatistics = rowGroupColumnStatistics.get(groupId);
             DoubleStreamCheckpoint dataCheckpoint = dataCheckpoints.get(groupId);
             Optional<BooleanStreamCheckpoint> presentCheckpoint = presentCheckpoints.map(checkpoints -> checkpoints.get(groupId));
-            List<Integer> positions = createDoubleColumnPositionList(compressed, dataCheckpoint, presentCheckpoint);
+            List<Long> positions = createDoubleColumnPositionList(compressed, dataCheckpoint, presentCheckpoint);
             rowGroupIndexes.add(new RowGroupIndex(positions, columnStatistics));
         }
 
@@ -164,12 +164,12 @@ public class DoubleColumnWriter
         return ImmutableList.of(new StreamDataOutput(slice, stream));
     }
 
-    private static List<Integer> createDoubleColumnPositionList(
+    private static List<Long> createDoubleColumnPositionList(
             boolean compressed,
             DoubleStreamCheckpoint dataCheckpoint,
             Optional<BooleanStreamCheckpoint> presentCheckpoint)
     {
-        ImmutableList.Builder<Integer> positionList = ImmutableList.builder();
+        ImmutableList.Builder<Long> positionList = ImmutableList.builder();
         presentCheckpoint.ifPresent(booleanStreamCheckpoint -> positionList.addAll(booleanStreamCheckpoint.toPositionList(compressed)));
         positionList.addAll(dataCheckpoint.toPositionList(compressed));
         return positionList.build();

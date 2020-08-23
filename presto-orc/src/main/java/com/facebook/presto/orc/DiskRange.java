@@ -23,9 +23,9 @@ import static java.util.Objects.requireNonNull;
 public final class DiskRange
 {
     private final long offset;
-    private final int length;
+    private final long length;
 
-    public DiskRange(long offset, int length)
+    public DiskRange(long offset, long length)
     {
         checkArgument(offset >= 0, "offset is negative");
         checkArgument(length > 0, "length must be at least 1");
@@ -39,7 +39,7 @@ public final class DiskRange
         return offset;
     }
 
-    public int getLength()
+    public long getLength()
     {
         return length;
     }

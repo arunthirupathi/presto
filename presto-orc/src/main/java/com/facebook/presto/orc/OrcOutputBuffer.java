@@ -13,7 +13,7 @@
  */
 package com.facebook.presto.orc;
 
-import com.facebook.presto.orc.checkpoint.InputStreamCheckpoint;
+import com.facebook.presto.orc.checkpoint.Checkpoint;
 import com.facebook.presto.orc.metadata.CompressionKind;
 import com.facebook.presto.orc.zlib.DeflateCompressor;
 import com.facebook.presto.orc.zstd.ZstdJniCompressor;
@@ -133,12 +133,12 @@ public class OrcOutputBuffer
         return compressedOutputStream.size();
     }
 
-    public long getCheckpoint()
+    public Checkpoint getCheckpoint()
     {
         if (compressor == null && !dwrfEncryptor.isPresent()) {
-            return size();
+            return new Checkpoint(0, size());
         }
-        return InputStreamCheckpoint.createInputStreamCheckpoint(compressedOutputStream.size(), bufferPosition);
+        return new Checkpoint(compressedOutputStream.size(), bufferPosition);
     }
 
     @Override

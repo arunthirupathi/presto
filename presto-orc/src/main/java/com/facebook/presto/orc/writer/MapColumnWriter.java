@@ -198,7 +198,7 @@ public class MapColumnWriter
             ColumnStatistics columnStatistics = rowGroupColumnStatistics.get(groupId);
             LongStreamCheckpoint lengthCheckpoint = lengthCheckpoints.get(groupId);
             Optional<BooleanStreamCheckpoint> presentCheckpoint = presentCheckpoints.map(checkpoints -> checkpoints.get(groupId));
-            List<Integer> positions = createArrayColumnPositionList(compressed, lengthCheckpoint, presentCheckpoint);
+            List<Long> positions = createArrayColumnPositionList(compressed, lengthCheckpoint, presentCheckpoint);
             rowGroupIndexes.add(new RowGroupIndex(positions, columnStatistics));
         }
 
@@ -212,12 +212,12 @@ public class MapColumnWriter
         return indexStreams.build();
     }
 
-    private static List<Integer> createArrayColumnPositionList(
+    private static List<Long> createArrayColumnPositionList(
             boolean compressed,
             LongStreamCheckpoint lengthCheckpoint,
             Optional<BooleanStreamCheckpoint> presentCheckpoint)
     {
-        ImmutableList.Builder<Integer> positionList = ImmutableList.builder();
+        ImmutableList.Builder<Long> positionList = ImmutableList.builder();
         presentCheckpoint.ifPresent(booleanStreamCheckpoint -> positionList.addAll(booleanStreamCheckpoint.toPositionList(compressed)));
         positionList.addAll(lengthCheckpoint.toPositionList(compressed));
         return positionList.build();

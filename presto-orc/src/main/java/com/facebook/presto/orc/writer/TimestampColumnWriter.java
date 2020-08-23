@@ -209,7 +209,7 @@ public class TimestampColumnWriter
             LongStreamCheckpoint secondsCheckpoint = secondsCheckpoints.get(groupId);
             LongStreamCheckpoint nanosCheckpoint = nanosCheckpoints.get(groupId);
             Optional<BooleanStreamCheckpoint> presentCheckpoint = presentCheckpoints.map(checkpoints -> checkpoints.get(groupId));
-            List<Integer> positions = createTimestampColumnPositionList(compressed, secondsCheckpoint, nanosCheckpoint, presentCheckpoint);
+            List<Long> positions = createTimestampColumnPositionList(compressed, secondsCheckpoint, nanosCheckpoint, presentCheckpoint);
             rowGroupIndexes.add(new RowGroupIndex(positions, columnStatistics));
         }
 
@@ -218,13 +218,13 @@ public class TimestampColumnWriter
         return ImmutableList.of(new StreamDataOutput(slice, stream));
     }
 
-    private static List<Integer> createTimestampColumnPositionList(
+    private static List<Long> createTimestampColumnPositionList(
             boolean compressed,
             LongStreamCheckpoint secondsCheckpoint,
             LongStreamCheckpoint nanosCheckpoint,
             Optional<BooleanStreamCheckpoint> presentCheckpoint)
     {
-        ImmutableList.Builder<Integer> positionList = ImmutableList.builder();
+        ImmutableList.Builder<Long> positionList = ImmutableList.builder();
         presentCheckpoint.ifPresent(booleanStreamCheckpoint -> positionList.addAll(booleanStreamCheckpoint.toPositionList(compressed)));
         positionList.addAll(secondsCheckpoint.toPositionList(compressed));
         positionList.addAll(nanosCheckpoint.toPositionList(compressed));

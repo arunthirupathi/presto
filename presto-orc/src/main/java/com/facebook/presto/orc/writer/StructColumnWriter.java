@@ -186,7 +186,7 @@ public class StructColumnWriter
             int groupId = i;
             ColumnStatistics columnStatistics = rowGroupColumnStatistics.get(groupId);
             Optional<BooleanStreamCheckpoint> presentCheckpoint = presentCheckpoints.map(checkpoints -> checkpoints.get(groupId));
-            List<Integer> positions = createStructColumnPositionList(compressed, presentCheckpoint);
+            List<Long> positions = createStructColumnPositionList(compressed, presentCheckpoint);
             rowGroupIndexes.add(new RowGroupIndex(positions, columnStatistics));
         }
 
@@ -201,11 +201,11 @@ public class StructColumnWriter
         return indexStreams.build();
     }
 
-    private static List<Integer> createStructColumnPositionList(
+    private static List<Long> createStructColumnPositionList(
             boolean compressed,
             Optional<BooleanStreamCheckpoint> presentCheckpoint)
     {
-        ImmutableList.Builder<Integer> positionList = ImmutableList.builder();
+        ImmutableList.Builder<Long> positionList = ImmutableList.builder();
         presentCheckpoint.ifPresent(booleanStreamCheckpoint -> positionList.addAll(booleanStreamCheckpoint.toPositionList(compressed)));
         return positionList.build();
     }

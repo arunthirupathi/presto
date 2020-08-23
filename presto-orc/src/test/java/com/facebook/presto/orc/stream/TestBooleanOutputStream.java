@@ -93,7 +93,7 @@ public class TestBooleanOutputStream
         assertNotNull(leftCheckpoint);
         assertNotNull(rightCheckpoint);
 
-        return leftCheckpoint.getInputStreamCheckpoint() == rightCheckpoint.getInputStreamCheckpoint() &&
+        return leftCheckpoint.getInputStreamCheckpoint().equals(rightCheckpoint.getInputStreamCheckpoint()) &&
                 leftCheckpoint.getOffset() == rightCheckpoint.getOffset();
     }
 }

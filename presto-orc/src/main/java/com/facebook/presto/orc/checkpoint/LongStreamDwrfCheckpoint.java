@@ -17,7 +17,6 @@ import com.facebook.presto.orc.checkpoint.Checkpoints.ColumnPositionsList;
 
 import java.util.List;
 
-import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.createInputStreamCheckpoint;
 import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.createInputStreamPositionList;
 import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.inputStreamCheckpointToString;
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -25,25 +24,25 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 public final class LongStreamDwrfCheckpoint
         implements LongStreamCheckpoint
 {
-    private final long inputStreamCheckpoint;
+    private final Checkpoint inputStreamCheckpoint;
 
-    public LongStreamDwrfCheckpoint(long inputStreamCheckpoint)
+    public LongStreamDwrfCheckpoint(Checkpoint inputStreamCheckpoint)
     {
         this.inputStreamCheckpoint = inputStreamCheckpoint;
     }
 
     public LongStreamDwrfCheckpoint(boolean compressed, ColumnPositionsList positionsList)
     {
-        inputStreamCheckpoint = createInputStreamCheckpoint(compressed, positionsList);
+        inputStreamCheckpoint = Checkpoint.from(compressed, positionsList);
     }
 
-    public long getInputStreamCheckpoint()
+    public Checkpoint getInputStreamCheckpoint()
     {
         return inputStreamCheckpoint;
     }
 
     @Override
-    public List<Integer> toPositionList(boolean compressed)
+    public List<Long> toPositionList(boolean compressed)
     {
         return createInputStreamPositionList(compressed, inputStreamCheckpoint);
     }

@@ -72,7 +72,7 @@ public class CachingOrcDataSource
     {
         DiskRange newCacheRange = regionFinder.getRangeFor(offset);
         cachePosition = newCacheRange.getOffset();
-        cacheLength = newCacheRange.getLength();
+        cacheLength = toIntExact(newCacheRange.getLength());
         if (cache.length < cacheLength) {
             cache = new byte[cacheLength];
             systemMemoryContext.setBytes(cacheLength);
@@ -113,7 +113,8 @@ public class CachingOrcDataSource
         // will not result in eviction of cache that otherwise could have served any of the DiskRanges provided.
         for (Map.Entry<K, DiskRange> entry : diskRanges.entrySet()) {
             DiskRange diskRange = entry.getValue();
-            byte[] buffer = new byte[diskRange.getLength()];
+            final int length = toIntExact(diskRange.getLength());
+            byte[] buffer = new byte[length];
             readFully(diskRange.getOffset(), buffer);
             builder.put(entry.getKey(), new OrcDataSourceInput(Slices.wrappedBuffer(buffer).getInput(), buffer.length));
         }

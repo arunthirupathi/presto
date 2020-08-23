@@ -184,7 +184,7 @@ public class SliceDirectColumnWriter
             LongStreamCheckpoint lengthCheckpoint = lengthCheckpoints.get(groupId);
             ByteArrayStreamCheckpoint dataCheckpoint = dataCheckpoints.get(groupId);
             Optional<BooleanStreamCheckpoint> presentCheckpoint = presentCheckpoints.map(checkpoints -> checkpoints.get(groupId));
-            List<Integer> positions = createSliceColumnPositionList(compressed, lengthCheckpoint, dataCheckpoint, presentCheckpoint);
+            List<Long> positions = createSliceColumnPositionList(compressed, lengthCheckpoint, dataCheckpoint, presentCheckpoint);
             rowGroupIndexes.add(new RowGroupIndex(positions, columnStatistics));
         }
 
@@ -193,13 +193,13 @@ public class SliceDirectColumnWriter
         return ImmutableList.of(new StreamDataOutput(slice, stream));
     }
 
-    private static List<Integer> createSliceColumnPositionList(
+    private static List<Long> createSliceColumnPositionList(
             boolean compressed,
             LongStreamCheckpoint lengthCheckpoint,
             ByteArrayStreamCheckpoint dataCheckpoint,
             Optional<BooleanStreamCheckpoint> presentCheckpoint)
     {
-        ImmutableList.Builder<Integer> positionList = ImmutableList.builder();
+        ImmutableList.Builder<Long> positionList = ImmutableList.builder();
         presentCheckpoint.ifPresent(booleanStreamCheckpoint -> positionList.addAll(booleanStreamCheckpoint.toPositionList(compressed)));
         positionList.addAll(dataCheckpoint.toPositionList(compressed));
         positionList.addAll(lengthCheckpoint.toPositionList(compressed));

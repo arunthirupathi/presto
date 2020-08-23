@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.createInputStreamCheckpoint;
 import static com.facebook.presto.orc.metadata.ColumnEncoding.ColumnEncodingKind.DICTIONARY;
 import static com.facebook.presto.orc.metadata.ColumnEncoding.ColumnEncodingKind.DICTIONARY_V2;
 import static com.facebook.presto.orc.metadata.ColumnEncoding.ColumnEncodingKind.DIRECT;
@@ -83,7 +82,7 @@ public final class Checkpoints
             }
 
             int sequence = entry.getKey().getSequence();
-            List<Integer> positionsList = entry.getValue().get(rowGroupId).getPositions();
+            List<Long> positionsList = entry.getValue().get(rowGroupId).getPositions();
 
             ColumnEncodingKind columnEncoding = columnEncodings.get(column).getColumnEncoding(sequence).getColumnEncodingKind();
             OrcTypeKind columnType = columnTypes.get(column).getOrcTypeKind();
@@ -154,22 +153,22 @@ public final class Checkpoints
                 case SHORT:
                 case INT:
                 case LONG:
-                    return new LongStreamDwrfCheckpoint(createInputStreamCheckpoint(0, 0));
+                    return new LongStreamDwrfCheckpoint(new Checkpoint(0, 0));
                 case STRING:
                 case VARCHAR:
                 case CHAR:
                 case BINARY:
-                    return new ByteArrayStreamCheckpoint(createInputStreamCheckpoint(0, 0));
+                    return new ByteArrayStreamCheckpoint(new Checkpoint(0, 0));
             }
         }
 
         // dictionary length and data streams are unsigned long streams
         if (streamId.getStreamKind() == LENGTH || streamId.getStreamKind() == DATA) {
             if (columnEncoding == DICTIONARY_V2) {
-                return new LongStreamV2Checkpoint(0, createInputStreamCheckpoint(0, 0));
+                return new LongStreamV2Checkpoint(0, new Checkpoint(0, 0));
             }
             else if (columnEncoding == DICTIONARY) {
-                return new LongStreamV1Checkpoint(0, createInputStreamCheckpoint(0, 0));
+                return new LongStreamV1Checkpoint(0, new Checkpoint(0, 0));
             }
         }
         throw new IllegalArgumentException("Unsupported column type " + columnType + " for dictionary stream " + streamId);
@@ -480,10 +479,10 @@ public final class Checkpoints
         private final int column;
         private final int sequence;
         private final OrcTypeKind columnType;
-        private final List<Integer> positionsList;
+        private final List<Long> positionsList;
         private int index;
 
-        private ColumnPositionsList(int column, int sequence, OrcTypeKind columnType, List<Integer> positionsList)
+        private ColumnPositionsList(int column, int sequence, OrcTypeKind columnType, List<Long> positionsList)
         {
             this.column = column;
             this.sequence = sequence;
@@ -501,7 +500,7 @@ public final class Checkpoints
             return index < positionsList.size();
         }
 
-        public int nextPosition()
+        public long nextPosition()
         {
             if (!hasNextPosition()) {
                 throw new InvalidCheckpointException("Not enough positions for column %s and sequence %s, of type %s, checkpoints",

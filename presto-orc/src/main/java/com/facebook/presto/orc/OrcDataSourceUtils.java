@@ -83,7 +83,8 @@ public final class OrcDataSourceUtils
             byte[] buffer = bufferEntry.getValue();
             if (bufferRange.contains(diskRange)) {
                 int offset = toIntExact(diskRange.getOffset() - bufferRange.getOffset());
-                return Slices.wrappedBuffer(buffer, offset, diskRange.getLength());
+                final int length = toIntExact(diskRange.getLength());
+                return Slices.wrappedBuffer(buffer, offset, length);
             }
         }
         throw new IllegalStateException("No matching buffer for disk range");

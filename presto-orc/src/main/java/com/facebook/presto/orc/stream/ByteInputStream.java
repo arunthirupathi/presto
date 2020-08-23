@@ -15,11 +15,13 @@ package com.facebook.presto.orc.stream;
 
 import com.facebook.presto.orc.OrcCorruptionException;
 import com.facebook.presto.orc.checkpoint.ByteStreamCheckpoint;
+import com.facebook.presto.orc.checkpoint.Checkpoint;
 
 import java.io.IOException;
 import java.util.Arrays;
 
 import static java.lang.Math.min;
+import static java.lang.Math.toIntExact;
 
 public class ByteInputStream
         implements ValueInputStream<ByteStreamCheckpoint>
@@ -30,7 +32,7 @@ public class ByteInputStream
     private final byte[] buffer = new byte[MIN_REPEAT_SIZE + 127];
     private int length;
     private int offset;
-    private long lastReadInputCheckpoint;
+    private Checkpoint lastReadInputCheckpoint;
 
     public ByteInputStream(OrcInputStream input)
     {
@@ -85,7 +87,7 @@ public class ByteInputStream
     {
         // if the checkpoint is within the current buffer, just adjust the pointer
         if (lastReadInputCheckpoint == checkpoint.getInputStreamCheckpoint() && checkpoint.getOffset() <= length) {
-            offset = checkpoint.getOffset();
+            offset = toIntExact(checkpoint.getOffset());
         }
         else {
             // otherwise, discard the buffer and start over

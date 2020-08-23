@@ -19,6 +19,7 @@ import com.facebook.presto.orc.OrcCorruptionException;
 import com.facebook.presto.orc.OrcDataSourceId;
 import com.facebook.presto.orc.OrcDecompressor;
 import com.facebook.presto.orc.OrcLocalMemoryContext;
+import com.facebook.presto.orc.checkpoint.Checkpoint;
 import com.facebook.presto.orc.metadata.OrcType.OrcTypeKind;
 import io.airlift.slice.ByteArrays;
 import io.airlift.slice.FixedLengthSliceInput;
@@ -29,9 +30,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Optional;
 
-import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.createInputStreamCheckpoint;
-import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.decodeCompressedBlockOffset;
-import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.decodeDecompressedOffset;
 import static com.facebook.presto.orc.stream.LongDecode.zigzagDecode;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static io.airlift.slice.SizeOf.SIZE_OF_DOUBLE;
@@ -64,7 +62,7 @@ public final class OrcInputStream
     // Temporary memory for reading a float or double at buffer boundary.
     private final byte[] temporaryBuffer = new byte[SIZE_OF_DOUBLE];
 
-    private int currentCompressedBlockOffset;
+    private long currentCompressedBlockOffset;
 
     private byte[] buffer;
     private int position;
@@ -197,22 +195,22 @@ public final class OrcInputStream
         return orcDataSourceId;
     }
 
-    public long getCheckpoint()
+    public Checkpoint getCheckpoint()
     {
         // if the decompressed buffer is empty, return a checkpoint starting at the next block
         if (buffer == null || (position == 0 && available() == 0)) {
-            return createInputStreamCheckpoint(toIntExact(compressedSliceInput.position()), 0);
+            return new Checkpoint(compressedSliceInput.position(), 0);
         }
         // otherwise return a checkpoint at the last compressed block read and the current position in the buffer
         // If we have uncompressed data uncompressedOffset is not included in the offset.
-        return createInputStreamCheckpoint(currentCompressedBlockOffset, toIntExact(position - uncompressedOffset));
+        return new Checkpoint(currentCompressedBlockOffset, position - uncompressedOffset);
     }
 
-    public boolean seekToCheckpoint(long checkpoint)
+    public boolean seekToCheckpoint(Checkpoint checkpoint)
             throws IOException
     {
-        int compressedBlockOffset = decodeCompressedBlockOffset(checkpoint);
-        int decompressedOffset = decodeDecompressedOffset(checkpoint);
+        long compressedBlockOffset = checkpoint.compressedBlockOffset;
+        long decompressedOffset = checkpoint.decompressedOffset;
         boolean discardedBuffer;
         if (compressedBlockOffset != currentCompressedBlockOffset) {
             if (!decompressor.isPresent() && !dwrfDecryptor.isPresent()) {
@@ -462,7 +460,7 @@ public final class OrcInputStream
 
         // 3 byte header
         // NOTE: this must match BLOCK_HEADER_SIZE
-        currentCompressedBlockOffset = toIntExact(compressedSliceInput.position());
+        currentCompressedBlockOffset = compressedSliceInput.position();
         int b0 = compressedSliceInput.readUnsignedByte();
         int b1 = compressedSliceInput.readUnsignedByte();
         int b2 = compressedSliceInput.readUnsignedByte();

@@ -597,7 +597,7 @@ public class StripeReader
         for (List<Stream> groupStreams : streams) {
             long stripeOffset = 0;
             for (Stream stream : groupStreams) {
-                int streamLength = toIntExact(stream.getLength());
+                final long streamLength = stream.getLength();
                 if (stream.getOffset().isPresent()) {
                     stripeOffset = stream.getOffset().get();
                 }

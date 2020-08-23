@@ -22,16 +22,16 @@ import static java.util.Objects.requireNonNull;
 
 public class RowGroupIndex
 {
-    private final List<Integer> positions;
+    private final List<Long> positions;
     private final ColumnStatistics statistics;
 
-    public RowGroupIndex(List<Integer> positions, ColumnStatistics statistics)
+    public RowGroupIndex(List<Long> positions, ColumnStatistics statistics)
     {
         this.positions = ImmutableList.copyOf(requireNonNull(positions, "positions is null"));
         this.statistics = requireNonNull(statistics, "statistics is null");
     }
 
-    public List<Integer> getPositions()
+    public List<Long> getPositions()
     {
         return positions;
     }

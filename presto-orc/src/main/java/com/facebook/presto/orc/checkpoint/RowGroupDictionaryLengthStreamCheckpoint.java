@@ -17,13 +17,14 @@ import com.facebook.presto.orc.checkpoint.Checkpoints.ColumnPositionsList;
 
 import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.inputStreamCheckpointToString;
 import static com.google.common.base.MoreObjects.toStringHelper;
+import static java.lang.Math.toIntExact;
 
 public final class RowGroupDictionaryLengthStreamCheckpoint
         extends LongStreamV1Checkpoint
 {
     private final int rowGroupDictionarySize;
 
-    public RowGroupDictionaryLengthStreamCheckpoint(int rowGroupDictionarySize, int offset, long inputStreamCheckpoint)
+    public RowGroupDictionaryLengthStreamCheckpoint(int rowGroupDictionarySize, int offset, Checkpoint inputStreamCheckpoint)
     {
         super(offset, inputStreamCheckpoint);
         this.rowGroupDictionarySize = rowGroupDictionarySize;
@@ -32,7 +33,7 @@ public final class RowGroupDictionaryLengthStreamCheckpoint
     public RowGroupDictionaryLengthStreamCheckpoint(boolean compressed, ColumnPositionsList positionsList)
     {
         super(compressed, positionsList);
-        rowGroupDictionarySize = positionsList.nextPosition();
+        rowGroupDictionarySize = toIntExact(positionsList.nextPosition());
     }
 
     public int getRowGroupDictionarySize()

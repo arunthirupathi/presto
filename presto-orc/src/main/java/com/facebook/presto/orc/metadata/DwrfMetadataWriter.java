@@ -321,9 +321,7 @@ public class DwrfMetadataWriter
     private static RowIndexEntry toRowGroupIndex(RowGroupIndex rowGroupIndex)
     {
         return RowIndexEntry.newBuilder()
-                .addAllPositions(rowGroupIndex.getPositions().stream()
-                        .map(Integer::longValue)
-                        .collect(toImmutableList()))
+                .addAllPositions(rowGroupIndex.getPositions())
                 .setStatistics(toColumnStatistics(rowGroupIndex.getColumnStatistics()))
                 .build();
     }

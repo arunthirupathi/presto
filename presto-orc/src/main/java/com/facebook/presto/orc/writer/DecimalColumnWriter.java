@@ -202,7 +202,7 @@ public class DecimalColumnWriter
             DecimalStreamCheckpoint dataCheckpoint = dataCheckpoints.get(groupId);
             LongStreamCheckpoint scaleCheckpoint = scaleCheckpoints.get(groupId);
             Optional<BooleanStreamCheckpoint> presentCheckpoint = presentCheckpoints.map(checkpoints -> checkpoints.get(groupId));
-            List<Integer> positions = createDecimalColumnPositionList(compressed, dataCheckpoint, scaleCheckpoint, presentCheckpoint);
+            List<Long> positions = createDecimalColumnPositionList(compressed, dataCheckpoint, scaleCheckpoint, presentCheckpoint);
             rowGroupIndexes.add(new RowGroupIndex(positions, columnStatistics));
         }
 
@@ -211,13 +211,13 @@ public class DecimalColumnWriter
         return ImmutableList.of(new StreamDataOutput(slice, stream));
     }
 
-    private static List<Integer> createDecimalColumnPositionList(
+    private static List<Long> createDecimalColumnPositionList(
             boolean compressed,
             DecimalStreamCheckpoint dataCheckpoint,
             LongStreamCheckpoint scaleCheckpoint,
             Optional<BooleanStreamCheckpoint> presentCheckpoint)
     {
-        ImmutableList.Builder<Integer> positionList = ImmutableList.builder();
+        ImmutableList.Builder<Long> positionList = ImmutableList.builder();
         presentCheckpoint.ifPresent(booleanStreamCheckpoint -> positionList.addAll(booleanStreamCheckpoint.toPositionList(compressed)));
         positionList.addAll(dataCheckpoint.toPositionList(compressed));
         positionList.addAll(scaleCheckpoint.toPositionList(compressed));

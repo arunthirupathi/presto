@@ -24,7 +24,7 @@ import static java.util.Objects.requireNonNull;
 public final class BooleanStreamCheckpoint
         implements StreamCheckpoint
 {
-    private final int offset;
+    private final long offset;
     private final ByteStreamCheckpoint byteStreamCheckpoint;
 
     public BooleanStreamCheckpoint(int offset, ByteStreamCheckpoint byteStreamCheckpoint)
@@ -39,7 +39,7 @@ public final class BooleanStreamCheckpoint
         offset = positionsList.nextPosition();
     }
 
-    public int getOffset()
+    public long getOffset()
     {
         return offset;
     }
@@ -49,9 +49,9 @@ public final class BooleanStreamCheckpoint
         return byteStreamCheckpoint;
     }
 
-    public List<Integer> toPositionList(boolean compressed)
+    public List<Long> toPositionList(boolean compressed)
     {
-        return ImmutableList.<Integer>builder()
+        return ImmutableList.<Long>builder()
                 .addAll(byteStreamCheckpoint.toPositionList(compressed))
                 .add(offset)
                 .build();

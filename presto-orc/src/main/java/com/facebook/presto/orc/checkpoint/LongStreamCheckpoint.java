@@ -18,5 +18,5 @@ import java.util.List;
 public interface LongStreamCheckpoint
         extends StreamCheckpoint
 {
-    List<Integer> toPositionList(boolean compressed);
+    List<Long> toPositionList(boolean compressed);
 }

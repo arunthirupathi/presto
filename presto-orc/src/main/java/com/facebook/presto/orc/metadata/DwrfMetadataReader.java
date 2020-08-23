@@ -300,7 +300,7 @@ public class DwrfMetadataReader
         return new Stream(
                 stream.getColumn(),
                 toStreamKind(stream.getKind()),
-                toIntExact(stream.getLength()),
+                stream.getLength(),
                 stream.getUseVInts(),
                 stream.getSequence(),
                 stream.hasOffset() ? Optional.of(stream.getOffset()) : Optional.empty());
@@ -392,14 +392,10 @@ public class DwrfMetadataReader
     private static RowGroupIndex toRowGroupIndex(HiveWriterVersion hiveWriterVersion, DwrfProto.RowIndexEntry rowIndexEntry)
     {
         List<Long> positionsList = rowIndexEntry.getPositionsList();
-        ImmutableList.Builder<Integer> positions = ImmutableList.builder();
+        ImmutableList.Builder<Long> positions = ImmutableList.builderWithExpectedSize(positionsList.size());
         for (int index = 0; index < positionsList.size(); index++) {
             long longPosition = positionsList.get(index);
-            int intPosition = (int) longPosition;
-
-            checkState(intPosition == longPosition, "Expected checkpoint position %s, to be an integer", index);
-
-            positions.add(intPosition);
+            positions.add(longPosition);
         }
         return new RowGroupIndex(positions.build(), toColumnStatistics(hiveWriterVersion, rowIndexEntry.getStatistics(), true));
     }

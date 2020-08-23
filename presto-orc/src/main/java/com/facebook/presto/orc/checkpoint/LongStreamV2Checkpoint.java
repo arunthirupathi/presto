@@ -18,7 +18,6 @@ import com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
-import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.createInputStreamCheckpoint;
 import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.createInputStreamPositionList;
 import static com.facebook.presto.orc.checkpoint.InputStreamCheckpoint.inputStreamCheckpointToString;
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -26,10 +25,10 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 public final class LongStreamV2Checkpoint
         implements LongStreamCheckpoint
 {
-    private final int offset;
-    private final long inputStreamCheckpoint;
+    private final long offset;
+    private final Checkpoint inputStreamCheckpoint;
 
-    public LongStreamV2Checkpoint(int offset, long inputStreamCheckpoint)
+    public LongStreamV2Checkpoint(int offset, Checkpoint inputStreamCheckpoint)
     {
         this.offset = offset;
         this.inputStreamCheckpoint = inputStreamCheckpoint;
@@ -37,24 +36,24 @@ public final class LongStreamV2Checkpoint
 
     public LongStreamV2Checkpoint(boolean compressed, ColumnPositionsList positionsList)
     {
-        inputStreamCheckpoint = createInputStreamCheckpoint(compressed, positionsList);
+        inputStreamCheckpoint = Checkpoint.from(compressed, positionsList);
         offset = positionsList.nextPosition();
     }
 
-    public int getOffset()
+    public long getOffset()
     {
         return offset;
     }
 
-    public long getInputStreamCheckpoint()
+    public Checkpoint getInputStreamCheckpoint()
     {
         return inputStreamCheckpoint;
     }
 
     @Override
-    public List<Integer> toPositionList(boolean compressed)
+    public List<Long> toPositionList(boolean compressed)
     {
-        return ImmutableList.<Integer>builder()
+        return ImmutableList.<Long>builder()
                 .addAll(createInputStreamPositionList(compressed, inputStreamCheckpoint))
                 .add(offset)
                 .build();

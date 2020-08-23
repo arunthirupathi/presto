@@ -162,7 +162,8 @@ public abstract class AbstractOrcDataSource
                     DiskRange diskRange = diskRangeEntry.getValue();
                     if (mergedRange.contains(diskRange)) {
                         FixedLengthSliceInput sliceInput = new LazySliceInput(diskRange.getLength(), new LazyMergedSliceLoader(diskRange, mergedRangeLazyLoader));
-                        slices.put(diskRangeEntry.getKey(), new OrcDataSourceInput(sliceInput, diskRange.getLength()));
+                        final int length = toIntExact(diskRange.getLength());
+                        slices.put(diskRangeEntry.getKey(), new OrcDataSourceInput(sliceInput, length));
                     }
                 }
             }
@@ -171,13 +172,15 @@ public abstract class AbstractOrcDataSource
             Map<DiskRange, byte[]> buffers = new LinkedHashMap<>();
             for (DiskRange mergedRange : mergedRanges) {
                 // read full range in one request
-                byte[] buffer = new byte[mergedRange.getLength()];
+                final int length = toIntExact(mergedRange.getLength());
+                byte[] buffer = new byte[length];
                 readFully(mergedRange.getOffset(), buffer);
                 buffers.put(mergedRange, buffer);
             }
 
             for (Entry<K, DiskRange> entry : diskRanges.entrySet()) {
-                slices.put(entry.getKey(), new OrcDataSourceInput(getDiskRangeSlice(entry.getValue(), buffers).getInput(), entry.getValue().getLength()));
+                final int length = toIntExact(entry.getValue().getLength());
+                slices.put(entry.getKey(), new OrcDataSourceInput(getDiskRangeSlice(entry.getValue(), buffers).getInput(), length));
             }
         }
 
@@ -224,7 +227,8 @@ public abstract class AbstractOrcDataSource
 
             checkArgument(diskRange.contains(nestedDiskRange));
             int offset = toIntExact(nestedDiskRange.getOffset() - diskRange.getOffset());
-            return bufferSlice.slice(offset, nestedDiskRange.getLength());
+            final int length = toIntExact(nestedDiskRange.getLength());
+            return bufferSlice.slice(offset, length);
         }
 
         private void load()
@@ -233,7 +237,8 @@ public abstract class AbstractOrcDataSource
                 return;
             }
             try {
-                byte[] buffer = new byte[diskRange.getLength()];
+                final int length = toIntExact(diskRange.getLength());
+                byte[] buffer = new byte[length];
                 readFully(diskRange.getOffset(), buffer);
                 bufferSlice = Slices.wrappedBuffer(buffer);
             }

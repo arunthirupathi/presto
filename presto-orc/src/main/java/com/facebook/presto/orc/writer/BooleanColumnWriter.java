@@ -160,7 +160,7 @@ public class BooleanColumnWriter
             ColumnStatistics columnStatistics = rowGroupColumnStatistics.get(groupId);
             BooleanStreamCheckpoint dataCheckpoint = dataCheckpoints.get(groupId);
             Optional<BooleanStreamCheckpoint> presentCheckpoint = presentCheckpoints.map(checkpoints -> checkpoints.get(groupId));
-            List<Integer> positions = createBooleanColumnPositionList(compressed, dataCheckpoint, presentCheckpoint);
+            List<Long> positions = createBooleanColumnPositionList(compressed, dataCheckpoint, presentCheckpoint);
             rowGroupIndexes.add(new RowGroupIndex(positions, columnStatistics));
         }
 
@@ -169,12 +169,12 @@ public class BooleanColumnWriter
         return ImmutableList.of(new StreamDataOutput(slice, stream));
     }
 
-    private static List<Integer> createBooleanColumnPositionList(
+    private static List<Long> createBooleanColumnPositionList(
             boolean compressed,
             BooleanStreamCheckpoint dataCheckpoint,
             Optional<BooleanStreamCheckpoint> presentCheckpoint)
     {
-        ImmutableList.Builder<Integer> positionList = ImmutableList.builder();
+        ImmutableList.Builder<Long> positionList = ImmutableList.builder();
         presentCheckpoint.ifPresent(booleanStreamCheckpoint -> positionList.addAll(booleanStreamCheckpoint.toPositionList(compressed)));
         positionList.addAll(dataCheckpoint.toPositionList(compressed));
         return positionList.build();

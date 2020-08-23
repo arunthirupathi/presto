@@ -179,7 +179,7 @@ public class LongColumnWriter
             ColumnStatistics columnStatistics = rowGroupColumnStatistics.get(groupId);
             LongStreamCheckpoint dataCheckpoint = dataCheckpoints.get(groupId);
             Optional<BooleanStreamCheckpoint> presentCheckpoint = presentCheckpoints.map(checkpoints -> checkpoints.get(groupId));
-            List<Integer> positions = createLongColumnPositionList(compressed, dataCheckpoint, presentCheckpoint);
+            List<Long> positions = createLongColumnPositionList(compressed, dataCheckpoint, presentCheckpoint);
             rowGroupIndexes.add(new RowGroupIndex(positions, columnStatistics));
         }
 
@@ -188,12 +188,12 @@ public class LongColumnWriter
         return ImmutableList.of(new StreamDataOutput(slice, stream));
     }
 
-    private static List<Integer> createLongColumnPositionList(
+    private static List<Long> createLongColumnPositionList(
             boolean compressed,
             LongStreamCheckpoint dataCheckpoint,
             Optional<BooleanStreamCheckpoint> presentCheckpoint)
     {
-        ImmutableList.Builder<Integer> positionList = ImmutableList.builder();
+        ImmutableList.Builder<Long> positionList = ImmutableList.builder();
         presentCheckpoint.ifPresent(booleanStreamCheckpoint -> positionList.addAll(booleanStreamCheckpoint.toPositionList(compressed)));
         positionList.addAll(dataCheckpoint.toPositionList(compressed));
         return positionList.build();

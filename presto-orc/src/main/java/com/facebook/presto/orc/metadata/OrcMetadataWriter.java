@@ -353,9 +353,7 @@ public class OrcMetadataWriter
     private static RowIndexEntry toRowGroupIndex(RowGroupIndex rowGroupIndex)
     {
         return OrcProto.RowIndexEntry.newBuilder()
-                .addAllPositions(rowGroupIndex.getPositions().stream()
-                        .map(Integer::longValue)
-                        .collect(toList()))
+                .addAllPositions(rowGroupIndex.getPositions())
                 .setStatistics(toColumnStatistics(rowGroupIndex.getColumnStatistics()))
                 .build();
     }

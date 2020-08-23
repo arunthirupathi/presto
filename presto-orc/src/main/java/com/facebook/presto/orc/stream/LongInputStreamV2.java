@@ -14,6 +14,7 @@
 package com.facebook.presto.orc.stream;
 
 import com.facebook.presto.orc.OrcCorruptionException;
+import com.facebook.presto.orc.checkpoint.Checkpoint;
 import com.facebook.presto.orc.checkpoint.LongStreamCheckpoint;
 import com.facebook.presto.orc.checkpoint.LongStreamV2Checkpoint;
 
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import static java.lang.Math.min;
+import static java.lang.Math.toIntExact;
 
 /**
  * @see {@link org.apache.hadoop.hive.ql.io.orc.RunLengthIntegerWriterV2} for description of various lightweight compression techniques.
@@ -44,7 +46,7 @@ public class LongInputStreamV2
     private int numLiterals;
     private int used;
     private final boolean skipCorrupt;
-    private long lastReadInputCheckpoint;
+    private Checkpoint lastReadInputCheckpoint;
 
     public LongInputStreamV2(OrcInputStream input, boolean signed, boolean skipCorrupt)
     {
@@ -422,7 +424,7 @@ public class LongInputStreamV2
 
         // if the checkpoint is within the current buffer, just adjust the pointer
         if (lastReadInputCheckpoint == v2Checkpoint.getInputStreamCheckpoint() && v2Checkpoint.getOffset() <= numLiterals) {
-            used = v2Checkpoint.getOffset();
+            used = toIntExact(v2Checkpoint.getOffset());
         }
         else {
             // otherwise, discard the buffer and start over

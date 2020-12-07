@@ -264,14 +264,27 @@ public class DictionaryBlock
         }
 
         long sizeInBytes = 0;
-        long[] seenSizes = new long[dictionary.getPositionCount()];
-        Arrays.fill(seenSizes, -1L);
-        for (int i = positionOffset; i < positionOffset + length; i++) {
-            int position = getId(i);
-            if (seenSizes[position] < 0) {
-                seenSizes[position] = dictionary.getRegionLogicalSizeInBytes(position, 1);
+        boolean useArrays = length * 3 > dictionary.getPositionCount();
+        if (useArrays) {
+            long[] seenSizes = new long[dictionary.getPositionCount()];
+            Arrays.fill(seenSizes, -1L);
+            for (int i = positionOffset; i < positionOffset + length; i++) {
+                int position = getId(i);
+                if (seenSizes[position] < 0) {
+                    seenSizes[position] = dictionary.getRegionLogicalSizeInBytes(position, 1);
+                }
+                sizeInBytes += seenSizes[position];
             }
-            sizeInBytes += seenSizes[position];
+        }
+        else {
+            Map<Integer, Long> seenSizes = new HashMap<>(length);
+            for (int i = positionOffset; i < positionOffset + length; i++) {
+                int position = getId(i);
+                if (!seenSizes.containsKey(position)) {
+                    seenSizes.put(position, dictionary.getRegionLogicalSizeInBytes(position, 1));
+                }
+                sizeInBytes += seenSizes.get(position);
+            }
         }
 
         if (positionOffset == 0 && length == getPositionCount()) {

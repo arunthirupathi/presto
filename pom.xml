@@ -97,6 +97,7 @@
         <module>presto-blackhole</module>
         <module>presto-memory</module>
         <module>presto-orc</module>
+        <module>presto-orc-shaded-hive-dwrf</module>
         <module>presto-parquet</module>
         <module>presto-rcfile</module>
         <module>presto-hive</module>
@@ -247,6 +248,12 @@
             <dependency>
                 <groupId>com.facebook.presto</groupId>
                 <artifactId>presto-orc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.facebook.presto</groupId>
+                <artifactId>presto-orc-shaded-hive-dwrf</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

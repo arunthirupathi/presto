@@ -13,7 +13,6 @@
  */
 package com.facebook.presto.orc;
 
-import com.facebook.hive.orc.OrcConf;
 import com.facebook.hive.orc.lazy.OrcLazyObject;
 import com.facebook.presto.common.Page;
 import com.facebook.presto.common.Subfield;
@@ -45,6 +44,7 @@ import com.facebook.presto.orc.TupleDomainFilter.DoubleRange;
 import com.facebook.presto.orc.cache.OrcFileTailSource;
 import com.facebook.presto.orc.cache.StorageOrcFileTailSource;
 import com.facebook.presto.orc.metadata.CompressionKind;
+import com.facebook.shaded.hive.dwrf.DwrfReferenceWriter;
 import com.google.common.base.Functions;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
@@ -2219,20 +2219,7 @@ public class OrcTester
     private static RecordWriter createDwrfRecordWriter(File outputFile, CompressionKind compressionCodec, List<Type> types)
             throws IOException
     {
-        JobConf jobConf = new JobConf();
-        jobConf.set("hive.exec.orc.default.compress", compressionCodec.name());
-        jobConf.set("hive.exec.orc.compress", compressionCodec.name());
-        OrcConf.setIntVar(jobConf, OrcConf.ConfVars.HIVE_ORC_ENTROPY_STRING_THRESHOLD, 1);
-        OrcConf.setIntVar(jobConf, OrcConf.ConfVars.HIVE_ORC_DICTIONARY_ENCODING_INTERVAL, 2);
-        OrcConf.setBoolVar(jobConf, OrcConf.ConfVars.HIVE_ORC_BUILD_STRIDE_DICTIONARY, true);
-
-        return new com.facebook.hive.orc.OrcOutputFormat().getHiveRecordWriter(
-                jobConf,
-                new Path(outputFile.toURI()),
-                Text.class,
-                compressionCodec != NONE,
-                createTableProperties(types),
-                () -> {});
+        return DwrfReferenceWriter.create(outputFile, compressionCodec.name(), createTableProperties(types));
     }
 
     static SettableStructObjectInspector createSettableStructObjectInspector(String name, Type type)

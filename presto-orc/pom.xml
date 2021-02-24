@@ -161,8 +161,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.facebook.hive</groupId>
-            <artifactId>hive-dwrf</artifactId>
+            <groupId>com.facebook.presto</groupId>
+            <artifactId>presto-orc-shaded-hive-dwrf</artifactId>
             <scope>test</scope>
         </dependency>
 

@@ -43,6 +43,9 @@ public final class ArrayEqualOperator
             @SqlType("array(E)") Block leftArray,
             @SqlType("array(E)") Block rightArray)
     {
+        if (rightArray == null) {
+            return false;
+        }
         if (leftArray.getPositionCount() != rightArray.getPositionCount()) {
             return false;
         }
@@ -85,6 +88,10 @@ public final class ArrayEqualOperator
             @SqlType("array(E)") Block leftArray,
             @SqlType("array(E)") Block rightArray)
     {
+        if (rightArray == null) {
+            return false;
+        }
+
         if (leftArray.getPositionCount() != rightArray.getPositionCount()) {
             return false;
         }
@@ -127,6 +134,10 @@ public final class ArrayEqualOperator
             @SqlType("array(E)") Block leftArray,
             @SqlType("array(E)") Block rightArray)
     {
+        if (rightArray == null) {
+            return false;
+        }
+
         if (leftArray.getPositionCount() != rightArray.getPositionCount()) {
             return false;
         }

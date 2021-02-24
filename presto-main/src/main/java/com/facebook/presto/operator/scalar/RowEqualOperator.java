@@ -82,6 +82,10 @@ public class RowEqualOperator
 
     public static Boolean equals(RowType rowType, List<MethodHandle> fieldEqualOperators, Block leftRow, Block rightRow)
     {
+        if (rightRow == null) {
+            return false;
+        }
+
         boolean indeterminate = false;
         for (int fieldIndex = 0; fieldIndex < leftRow.getPositionCount(); fieldIndex++) {
             if (leftRow.isNull(fieldIndex) || rightRow.isNull(fieldIndex)) {

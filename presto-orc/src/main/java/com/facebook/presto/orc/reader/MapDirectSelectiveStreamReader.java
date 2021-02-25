@@ -70,7 +70,6 @@ public class MapDirectSelectiveStreamReader
     private static final int INSTANCE_SIZE = ClassLayout.parseClass(MapDirectSelectiveStreamReader.class).instanceSize();
 
     private final StreamDescriptor streamDescriptor;
-    private final boolean legacyMapSubscript;
     private final boolean nullsAllowed;
     private final boolean nonNullsAllowed;
     private final boolean outputRequired;
@@ -104,6 +103,7 @@ public class MapDirectSelectiveStreamReader
     private int[] nestedOffsets;
     private int[] nestedPositions;
     private int[] nestedOutputPositions;
+    private final int[] lengthBuffer;
     private int nestedOutputPositionCount;
 
     private boolean valuesInUse;
@@ -121,7 +121,6 @@ public class MapDirectSelectiveStreamReader
         checkArgument(filters.keySet().stream().map(Subfield::getPath).allMatch(List::isEmpty), "filters on nested columns are not supported yet");
 
         this.streamDescriptor = requireNonNull(streamDescriptor, "streamDescriptor is null");
-        this.legacyMapSubscript = legacyMapSubscript;
         this.systemMemoryContext = requireNonNull(systemMemoryContext, "systemMemoryContext is null").newOrcLocalMemoryContext(MapDirectSelectiveStreamReader.class.getSimpleName());
         this.outputRequired = requireNonNull(outputType, "outputType is null").isPresent();
         this.outputType = outputType.map(MapType.class::cast).orElse(null);
@@ -129,6 +128,7 @@ public class MapDirectSelectiveStreamReader
         TupleDomainFilter filter = getTopLevelFilter(filters).orElse(null);
         this.nullsAllowed = filter == null || filter.testNull();
         this.nonNullsAllowed = filter == null || filter.testNonNull();
+        this.lengthBuffer = new int[512];
 
         List<StreamDescriptor> nestedStreams = streamDescriptor.getNestedStreams();
 
@@ -299,16 +299,36 @@ public class MapDirectSelectiveStreamReader
         int nestedOffset = 0;
         int nestedPositionCount = 0;
 
+        int lengthBufferIndex = 0;
+        int lengthBufferEntries = 0;
+
         for (int i = 0; i < positionCount; i++) {
+            if (lengthBufferIndex == lengthBufferEntries) {
+                lengthBufferEntries = Math.min(positionCount - i, lengthBuffer.length);
+                lengthBufferIndex = 0;
+                lengthStream.next(lengthBuffer, lengthBufferEntries);
+            }
+
             int position = positions[i];
-            if (position > streamPosition) {
-                nestedOffset += lengthStream.sum(position - streamPosition);
-                streamPosition = position;
+            while (position > streamPosition) {
+                int numIterations = Math.min(position - streamPosition, lengthBufferEntries - lengthBufferIndex);
+
+                for (int j = 0; j < numIterations; j++) {
+                    nestedOffset += lengthBuffer[lengthBufferIndex++];
+                }
+                streamPosition += numIterations;
+
+                if (lengthBufferIndex == lengthBufferEntries) {
+                    int entries = Math.max(positionCount - i, position - streamPosition);
+                    lengthBufferEntries = Math.min(entries, lengthBuffer.length);
+                    lengthBufferIndex = 0;
+                    lengthStream.next(lengthBuffer, lengthBufferEntries);
+                }
             }
 
             streamPosition++;
 
-            int length = toIntExact(lengthStream.next());
+            int length = lengthBuffer[lengthBufferIndex++];
             offsets[i + 1] = offsets[i] + length;
             nestedLengths[i] = length;
             nestedOffsets[i] = nestedOffset;
@@ -739,6 +759,7 @@ public class MapDirectSelectiveStreamReader
                 sizeOf(nestedOffsets) +
                 sizeOf(nestedPositions) +
                 sizeOf(nestedOutputPositions) +
+                sizeOf(lengthBuffer) +
                 (keyReader != null ? keyReader.getRetainedSizeInBytes() : 0) +
                 (valueReader != null ? valueReader.getRetainedSizeInBytes() : 0);
     }

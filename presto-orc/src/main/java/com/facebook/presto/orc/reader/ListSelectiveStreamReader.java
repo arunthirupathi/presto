@@ -109,6 +109,7 @@ public class ListSelectiveStreamReader
     private int[] elementPositions;         // positions in elementStream corresponding to positions passed to read(); relative to elementReadOffset
     private int elementOutputPositionCount;
     private int[] elementOutputPositions;
+    private final int[] lengthBuffer;
 
     private boolean valuesInUse;
 
@@ -189,6 +190,7 @@ public class ListSelectiveStreamReader
             this.listFilter = null;
             nullsFilter = null;
         }
+        this.lengthBuffer = new int[512];
 
         StreamDescriptor elementStreamDescriptor = streamDescriptor.getNestedStreams().get(0);
         Optional<Type> elementOutputType = outputType.map(type -> type.getTypeParameters().get(0));
@@ -260,8 +262,11 @@ public class ListSelectiveStreamReader
         if (lengthStream == null && presentStream != null) {
             streamPosition = readAllNulls(positions, positionCount);
         }
+        else if (presentStream == null) {
+            streamPosition = readNoNulls(positions, positionCount);
+        }
         else {
-            streamPosition = readNotAllNulls(positions, positionCount);
+            streamPosition = readWithNulls(positions, positionCount);
         }
 
         readOffset = offset + streamPosition;
@@ -327,9 +332,98 @@ public class ListSelectiveStreamReader
         return positions[positionCount - 1] + 1;
     }
 
-    private int readNotAllNulls(int[] positions, int positionCount)
+    private int readNoNulls(int[] positions, int positionCount)
             throws IOException
     {
+        checkState(presentStream == null, "PresentStream should be null");
+        // populate elementOffsets, elementLengths, and nulls
+        elementOffsets = ensureCapacity(elementOffsets, positionCount + 1);
+        elementLengths = ensureCapacity(elementLengths, positionCount);
+
+        systemMemoryContext.setBytes(getRetainedSizeInBytes());
+
+        int streamPosition = 0;
+        int skippedElements = 0;
+        int elementPositionCount = 0;
+
+        int lengthBufferIndex = 0;
+        int lengthBufferEntries = 0;
+
+        outputPositionCount = 0;
+
+        for (int i = 0; i < positionCount; i++) {
+            if (lengthBufferIndex == lengthBufferEntries) {
+                lengthBufferEntries = Math.min(positionCount - i, lengthBuffer.length);
+                lengthBufferIndex = 0;
+                lengthStream.next(lengthBuffer, lengthBufferEntries);
+            }
+
+            int position = positions[i];
+            while (position > streamPosition) {
+                int numIterations = Math.min(position - streamPosition, lengthBufferEntries - lengthBufferIndex);
+
+                for (int j = 0; j < numIterations; j++) {
+                    skippedElements += lengthBuffer[lengthBufferIndex++];
+                }
+                streamPosition += numIterations;
+
+                if (lengthBufferIndex == lengthBufferEntries) {
+                    int entries = Math.max(positionCount - i, position - streamPosition);
+                    lengthBufferEntries = Math.min(entries, lengthBuffer.length);
+                    lengthBufferIndex = 0;
+                    lengthStream.next(lengthBuffer, lengthBufferEntries);
+                }
+            }
+
+            int length = lengthBuffer[lengthBufferIndex++];
+
+            if (nonNullsAllowed && (nullsFilter == null || nullsFilter.testNonNull())) {
+                elementOffsets[outputPositionCount] = elementPositionCount + skippedElements;
+                elementLengths[outputPositionCount] = length;
+
+                elementPositionCount += length;
+
+                outputPositions[outputPositionCount] = position;
+                outputPositionCount++;
+            }
+            else {
+                skippedElements += length;
+            }
+
+            streamPosition++;
+
+            if (nullsFilter != null) {
+                int precedingPositionsToFail = nullsFilter.getPrecedingPositionsToFail();
+
+                for (int j = 0; j < precedingPositionsToFail; j++) {
+                    int elementLength = elementLengths[outputPositionCount - 1 - j];
+                    skippedElements += elementLength;
+                    elementPositionCount -= elementLength;
+                }
+                outputPositionCount -= precedingPositionsToFail;
+
+                int succeedingPositionsToFail = nullsFilter.getSucceedingPositionsToFail();
+                if (succeedingPositionsToFail > 0) {
+                    int positionsToSkip = 0;
+                    for (int j = 0; j < succeedingPositionsToFail; j++) {
+                        i++;
+                        int nextPosition = positions[i];
+                        positionsToSkip += 1 + nextPosition - streamPosition;
+                        streamPosition = nextPosition + 1;
+                    }
+                    skippedElements += skip(positionsToSkip);
+                }
+            }
+        }
+        elementOffsets[outputPositionCount] = elementPositionCount + skippedElements;
+
+        return populateChild(streamPosition, elementPositionCount);
+    }
+
+    private int readWithNulls(int[] positions, int positionCount)
+            throws IOException
+    {
+        checkState(presentStream != null, "PresentStream is null");
         // populate elementOffsets, elementLengths, and nulls
         elementOffsets = ensureCapacity(elementOffsets, positionCount + 1);
         elementLengths = ensureCapacity(elementLengths, positionCount);
@@ -410,6 +504,12 @@ public class ListSelectiveStreamReader
         }
         elementOffsets[outputPositionCount] = elementPositionCount + skippedElements;
 
+        return populateChild(streamPosition, elementPositionCount);
+    }
+
+    private int populateChild(int streamPosition, int elementPositionCount)
+            throws IOException
+    {
         elementPositionCount = populateElementPositions(elementPositionCount);
 
         if (listFilter != null) {

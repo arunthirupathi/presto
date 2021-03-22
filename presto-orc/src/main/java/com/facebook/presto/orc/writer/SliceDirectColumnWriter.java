@@ -123,31 +123,50 @@ public class SliceDirectColumnWriter
 
         // record nulls
         for (int position = 0; position < block.getPositionCount(); position++) {
-            presentStream.writeBoolean(!block.isNull(position));
+            writePresentValue(!block.isNull(position));
         }
 
         // record values
         for (int position = 0; position < block.getPositionCount(); position++) {
             if (!block.isNull(position)) {
                 Slice value = type.getSlice(block, position);
-                lengthStream.writeLong(value.length());
-                dataStream.writeSlice(value);
-                statisticsBuilder.addValue(value);
+                writeSlice(value);
             }
         }
+    }
+
+    void writePresentValue(boolean value)
+    {
+        presentStream.writeBoolean(value);
+    }
+
+    void writeSlice(Slice value)
+    {
+        lengthStream.writeLong(value.length());
+        dataStream.writeSlice(value);
+        statisticsBuilder.addValue(value);
+    }
+
+    void writeSliceWithoutStatistics(Slice slice, int sourceIndex, int length)
+    {
+        lengthStream.writeLong(length);
+        dataStream.writeSlice(slice, sourceIndex, length);
     }
 
     @Override
     public Map<Integer, ColumnStatistics> finishRowGroup()
     {
         checkState(!closed);
-
         ColumnStatistics statistics = statisticsBuilder.buildColumnStatistics();
+        finishRowGroup(statistics);
+        return ImmutableMap.of(column, statistics);
+    }
+
+    void finishRowGroup(ColumnStatistics statistics)
+    {
         rowGroupColumnStatistics.add(statistics);
         columnStatisticsRetainedSizeInBytes += statistics.getRetainedSizeInBytes();
-
         statisticsBuilder = statisticsBuilderSupplier.get();
-        return ImmutableMap.of(column, statistics);
     }
 
     @Override

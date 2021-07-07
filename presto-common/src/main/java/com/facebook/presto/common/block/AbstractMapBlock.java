@@ -150,6 +150,10 @@ public abstract class AbstractMapBlock
     @Override
     public Block getRegion(int position, int length)
     {
+        if (position == 0 && length == getPositionCount()) {
+            return this;
+        }
+
         int positionCount = getPositionCount();
         checkValidRegion(positionCount, position, length);
 
@@ -333,6 +337,10 @@ public abstract class AbstractMapBlock
     @Override
     public Block getSingleValueBlock(int position)
     {
+        if (position == 0 && getPositionCount() == 1) {
+            return this;
+        }
+
         checkReadablePosition(position);
 
         int startValueOffset = getOffset(position);

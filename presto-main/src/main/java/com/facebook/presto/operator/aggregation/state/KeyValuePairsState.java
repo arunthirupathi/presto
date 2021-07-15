@@ -31,4 +31,6 @@ public interface KeyValuePairsState
     Type getKeyType();
 
     Type getValueType();
+
+    boolean isHashTableRequired();
 }

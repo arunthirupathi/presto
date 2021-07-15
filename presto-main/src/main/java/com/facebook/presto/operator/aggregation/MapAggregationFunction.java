@@ -16,6 +16,7 @@ package com.facebook.presto.operator.aggregation;
 import com.facebook.presto.bytecode.DynamicClassLoader;
 import com.facebook.presto.common.block.Block;
 import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.block.MapBlockBuilder;
 import com.facebook.presto.common.type.MapType;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.Type;
@@ -148,6 +149,9 @@ public class MapAggregationFunction
         }
         else {
             pairs.serialize(out);
+        }
+        if (state.isHashTableRequired()) {
+            ((MapBlockBuilder) out).loadHashTables();
         }
     }
 }

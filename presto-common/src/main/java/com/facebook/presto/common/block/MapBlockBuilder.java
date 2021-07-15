@@ -479,6 +479,11 @@ public class MapBlockBuilder
                 getNewHashTables(newSize));
     }
 
+    public void loadHashTables()
+    {
+        ensureHashTableLoaded(keyBlockHashCode);
+    }
+
     @Override
     protected void ensureHashTableLoaded(MethodHandle keyBlockHashCode)
     {

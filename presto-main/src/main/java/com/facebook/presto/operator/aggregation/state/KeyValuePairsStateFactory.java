@@ -122,6 +122,12 @@ public class KeyValuePairsStateFactory
         {
             return INSTANCE_SIZE + size + pairs.sizeOf();
         }
+
+        @Override
+        public boolean isHashTableRequired()
+        {
+            return false;
+        }
     }
 
     public static class SingleState
@@ -175,6 +181,12 @@ public class KeyValuePairsStateFactory
                 estimatedSize += pair.estimatedInMemorySize();
             }
             return estimatedSize;
+        }
+
+        @Override
+        public boolean isHashTableRequired()
+        {
+            return true;
         }
     }
 }
